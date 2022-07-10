@@ -18,4 +18,7 @@ export default {
 
 <style>
 @import "assets/css/base.css";
+main-tab-bar{
+  background-color: red;
+}
 </style>
