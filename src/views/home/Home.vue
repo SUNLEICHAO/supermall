@@ -2,7 +2,13 @@
   <div id="home">
     <nav-bar class="home-nav"><div slot="center">购物街</div></nav-bar>
 
-    <scroll class="content">
+    <scroll
+      class="content"
+      ref="scroll"
+      :probe-type="3"
+      @scroll="contentScroll"
+      :pull-up-load='true' @pullingUp='loadMore'
+    >
       <home-swiper :banners="banners" />
       <recommend-view :recommends="recommends" />
       <feature-view />
@@ -14,8 +20,10 @@
       <goods-list :goods="showGoods" />
     </scroll>
 
+    <back-top @click.native="backClick" v-show="isShowBackTop" />
+
     <ul>
-      <li>1</li>
+      <li>列表1</li>
       <li>1</li>
       <li>1</li>
       <li>1</li>
@@ -65,6 +73,7 @@ import NavBar from "components/common/navbar/NavBar";
 import TabControl from "components/content/tabControl/TabControl";
 import GoodsList from "components/content/goods/GoodsList";
 import Scroll from "components/common/scroll/Scroll";
+import BackTop from "components/content/backTop/BackTop";
 
 // 方法 额外的数据
 import { getHomeMultidata, getHomeGoods } from "../../network/home";
@@ -79,6 +88,7 @@ export default {
     TabControl,
     GoodsList,
     Scroll,
+    BackTop,
   },
   data() {
     return {
@@ -91,6 +101,7 @@ export default {
         sell: { page: 0, list: [] },
       },
       currentType: "pop",
+      isShowBackTop: false,
     };
   },
   computed: {
@@ -127,6 +138,23 @@ export default {
       }
     },
 
+    backClick() {
+      // 封装前
+      // this.$refs.scroll.scroll.scrollTo(0,0,750);
+
+      this.$refs.scroll.scrollTo(0, 0, 750);
+    },
+
+    contentScroll(position) {
+      // console.log(position);
+      this.isShowBackTop = -position.y > 1000;
+    },
+
+    loadMore(){
+      this.getHomeGoods(this.currentType)
+
+      this.$refs.scroll.scroll.refresh()
+    },
     /* 
       网络请求相关的方法
     */
@@ -146,6 +174,8 @@ export default {
       getHomeGoods(type, page).then((res) => {
         this.goods[type].list.push(...res.data.list);
         this.goods[type].page += 1;
+
+        this.$refs.scroll.finishPullUp()
       });
     },
   },
@@ -154,7 +184,7 @@ export default {
 
 <style scoped>
 #home {
-  padding-top: 44px;
+  /* padding-top: 44px; */
   height: 100vh;
 }
 .home-nav {
@@ -172,8 +202,9 @@ export default {
   top: 44px;
   z-index: 9;
 }
+
 /* content确定高度的第二种方案 */
-.content {
+/* .content {
   overflow: hidden;
 
   position: absolute;
@@ -181,10 +212,10 @@ export default {
   bottom: 49px;
   left: 0;
   right: 0;
-}
-/* .content {
+} */
+.content {
   height: calc(100% - 93px);
   overflow: hidden;
   margin-top: 44px;
-} */
+}
 </style>

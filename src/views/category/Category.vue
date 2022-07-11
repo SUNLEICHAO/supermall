@@ -1,6 +1,7 @@
 <template>
-  <!-- <h2>分类</h2> -->
   <div class="wrapper">
+    <!-- click的属性false/true不对button起效果，对div有效，
+      div默认false，使用点击监听需要提前设为true -->
     <ul class="content">
       <button @click="btnClick">按钮</button>
       <li>分类列表1</li>
