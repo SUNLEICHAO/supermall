@@ -1,21 +1,29 @@
 <template>
   <div id="home">
     <nav-bar class="home-nav"><div slot="center">购物街</div></nav-bar>
+    <tab-control
+      :titles="['流行', '新款', '精选']"
+      @tabClick="tabClick"
+      ref="tabControl1"
+      class="tab-control"
+      v-show="isTabFixed"
+    />
 
     <scroll
       class="content"
       ref="scroll"
       :probe-type="3"
       @scroll="contentScroll"
-      :pull-up-load='true' @pullingUp='loadMore'
+      :pull-up-load="true"
+      @pullingUp="loadMore"
     >
-      <home-swiper :banners="banners" />
+      <home-swiper :banners="banners" @swiperImageLoad="swiperImageLoad" />
       <recommend-view :recommends="recommends" />
       <feature-view />
       <tab-control
-        class="tab-control"
         :titles="['流行', '新款', '精选']"
         @tabClick="tabClick"
+        ref="tabControl2"
       />
       <goods-list :goods="showGoods" />
     </scroll>
@@ -77,6 +85,8 @@ import BackTop from "components/content/backTop/BackTop";
 
 // 方法 额外的数据
 import { getHomeMultidata, getHomeGoods } from "../../network/home";
+import { debounce } from "@/common/utils";
+import { itemListenerMixin } from "common/mixin";
 
 export default {
   components: {
@@ -90,6 +100,7 @@ export default {
     Scroll,
     BackTop,
   },
+  mixins: [itemListenerMixin],
   data() {
     return {
       // result: null,
@@ -102,12 +113,32 @@ export default {
       },
       currentType: "pop",
       isShowBackTop: false,
+      tabOffsetTop: 0,
+      isTabFixed: false,
+      saveY: 0,
     };
   },
   computed: {
     showGoods() {
       return this.goods[this.currentType].list;
     },
+  },
+  destroyed() {
+    console.log("销毁了");
+  },
+  activated() {
+    // console.log("activated");
+    this.$refs.scroll.scrollTo(0, this.saveY, 0);
+    // 最好刷新一下，防止出现莫名其妙的错误
+    this.$refs.scroll.refresh();
+  },
+  deactivated() {
+    // 1 保存Y值
+    this.saveY = this.$refs.scroll.getScrollY();
+    console.log(this.saveY);
+
+    // 2 取消全局事件的监听
+    this.$bus.$off("itemImgLoad", this.itemImageListener);
   },
   created() {
     // 1.(组件创建完了，然后发送网络请求)请求多个数据
@@ -118,7 +149,16 @@ export default {
     this.getHomeGoods("new");
     this.getHomeGoods("sell");
   },
-  mounted() {},
+  mounted() {
+    // 1 图片加载完成的事件监听
+    // 该部分内容由混入代码替代
+
+
+    // 2 获取tabControl的offsetTop
+    // 所有的组件都有一个属性$el: 用于获取组件中的元素
+    // console.log("mouted", this.$refs.tabControl1.$el.offsetTop);
+    // this.tabOffsetTop = this.$
+  },
   methods: {
     /* 
       事件监听相关的方法
@@ -136,6 +176,9 @@ export default {
           this.currentType = "sell";
           break;
       }
+
+      this.$refs.tabControl1.currentIndex = index;
+      this.$refs.tabControl2.currentIndex = index;
     },
 
     backClick() {
@@ -147,13 +190,22 @@ export default {
 
     contentScroll(position) {
       // console.log(position);
+      // 1 判断BackTop是否显示
       this.isShowBackTop = -position.y > 1000;
+
+      // 2 决定tabControl是否吸顶(position: fixed)
+      this.isTabFixed = -position.y > this.tabOffsetTop;
     },
 
-    loadMore(){
-      this.getHomeGoods(this.currentType)
+    loadMore() {
+      this.getHomeGoods(this.currentType);
 
-      this.$refs.scroll.scroll.refresh()
+      this.$refs.scroll.refresh()
+    },
+
+    swiperImageLoad() {
+      // console.log('method:',this.$refs.tabControl.$el.offsetTop);
+      this.tabOffsetTop = this.$refs.tabControl2.$el.offsetTop;
     },
     /* 
       网络请求相关的方法
@@ -175,7 +227,7 @@ export default {
         this.goods[type].list.push(...res.data.list);
         this.goods[type].page += 1;
 
-        this.$refs.scroll.finishPullUp()
+        this.$refs.scroll.finishPullUp();
       });
     },
   },
@@ -191,20 +243,16 @@ export default {
   background-color: var(--color-tint);
   color: #fff;
 
-  position: fixed;
+  /* 原生滚动的时候 */
+  /* position: fixed;
   left: 0;
   right: 0;
-  top: 0;
-  z-index: 9;
-}
-.tab-control {
-  position: sticky;
-  top: 44px;
+  top: 0; */
   z-index: 9;
 }
 
 /* content确定高度的第二种方案 */
-/* .content {
+.content {
   overflow: hidden;
 
   position: absolute;
@@ -212,10 +260,16 @@ export default {
   bottom: 49px;
   left: 0;
   right: 0;
-} */
-.content {
+}
+
+.tab-control {
+  position: relative;
+  z-index: 9;
+}
+
+/* .content {
   height: calc(100% - 93px);
   overflow: hidden;
   margin-top: 44px;
-}
+} */
 </style>

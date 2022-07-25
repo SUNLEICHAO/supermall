@@ -33,31 +33,43 @@ export default {
     this.scroll = new BScroll(this.$refs.wrapper, {
       click: true,
       probeType: this.probeType,
-      pullUpLoad:this.pullUpLoad,
+      pullUpLoad: this.pullUpLoad,
     });
 
     // 2 监听滚动位置
-    this.scroll.on("scroll", (position) => {
-      // console.log(position);
-      this.$emit("scroll", position);
-    });
+    if (this.probeType === 2 || this.probeType === 3) {
+      this.scroll.on("scroll", (position) => {
+        // console.log(position);
+        this.$emit("scroll", position);
+      });
+    }
 
-    // 3 监听上拉事件
-    this.scroll.on('pullingUp', () => {
-      this.$emit('pullingUp')
-    })
+    // 3 监听scroll滚动到底部
+    if (this.pullUpLoad) {
+      this.scroll.on("pullingUp", () => {
+        this.$emit("pullingUp");
+      });
+    }
   },
   methods: {
-    // 将scrollTo进行一层蜂封装】
+    // 将scrollTo进行一层封装
     scrollTo(x, y, time = 500) {
-      this.scroll.scrollTo(x, y, time);
+      // 加一层判断，确定this.scroll存在时再运行
+      this.scroll && this.scroll.scrollTo(x, y, time);
     },
-    finishPullUp(){
-      this.scroll.finishPullUp()
+    finishPullUp() {
+      this.scroll && this.scroll.finishPullUp();
+    },
+    refresh() {
+      // console.log("---");
+      this.scroll && this.scroll.refresh();
+    },
+    getScrollY() {
+      return this.scroll ? this.scroll.y : 0
     }
   },
 };
 </script>
 
-<style>
+<style scoped>
 </style>

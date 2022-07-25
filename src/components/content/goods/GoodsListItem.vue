@@ -1,6 +1,6 @@
 <template>
-  <div class="goods-item">
-    <img :src="goodsItem.show.img" alt="" />
+  <div class="goods-item" @click="itemClick">
+    <img v-lazy="showImage" alt="" @load="imageLoad" />
     <div class="goods-info">
       <p>{{ goodsItem.title }}</p>
       <span class="price">{{ goodsItem.price }}</span>
@@ -19,10 +19,34 @@ export default {
       },
     },
   },
+  computed: {
+    showImage(){
+      return this.goodsItem.image || this.goodsItem.show.img
+    }
+  },
+  methods: {
+    imageLoad() {
+      // #1 发送一种事件,在对应的文件中一一添加该事件
+      this.$bus.$emit('itemImgLoad')
+
+      // #2 判断路由,根据路由派发不同的事件
+
+      // if (this.$route.path.indexOf('/home')) {
+      //   this.$bus.$emit('homeItemImaLoad')
+      // } else if (this.$route.path.indexOf('/detail')) {
+      //   this.$bus.$emit('detailItemImaLoad')
+      // }
+      
+    },
+    itemClick() {
+      // console.log('跳转详情页');
+      this.$router.push('/detail/'+this.goodsItem.iid)
+    },
+  }
 };
 </script>
 
-<style>
+<style scoped>
 .goods-item {
   padding-bottom: 40px;
   position: relative;

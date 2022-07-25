@@ -26,7 +26,7 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
 .goods {
   display: flex;
   /* 设置自动换行 */
